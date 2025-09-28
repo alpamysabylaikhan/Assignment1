@@ -1,0 +1,88 @@
+import java.util.*;
+
+public class Main {
+    static class Point {
+        double x, y;
+        Point(double x, double y) { this.x = x; this.y = y; }
+        public String toString() { return "(" + x + "," + y + ")"; }
+    }
+
+    private static double dist(Point p1, Point p2) {
+        return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+    }
+
+    private static double bruteForce(Point[] points, int left, int right) {
+        double min = Double.MAX_VALUE;
+        for (int i = left; i <= right; i++) {
+            for (int j = i + 1; j <= right; j++) {
+                min = Math.min(min, dist(points[i], points[j]));
+            }
+        }
+        return min;
+    }
+
+    private static double stripClosest(List<Point> strip, double d) {
+        double min = d;
+        for (int i = 0; i < strip.size(); i++) {
+            for (int j = i + 1; j < strip.size() && (strip.get(j).y - strip.get(i).y) < min; j++) {
+                min = Math.min(min, dist(strip.get(i), strip.get(j)));
+            }
+        }
+        return min;
+    }
+
+    private static double closestUtil(Point[] pointsSortedX, Point[] pointsSortedY, int left, int right) {
+        if (right - left <= 3) {
+            return bruteForce(pointsSortedX, left, right);
+        }
+
+        int mid = (left + right) / 2;
+        Point midPoint = pointsSortedX[mid];
+
+        List<Point> leftY = new ArrayList<>();
+        List<Point> rightY = new ArrayList<>();
+        for (Point p : pointsSortedY) {
+            if (p.x <= midPoint.x) leftY.add(p);
+            else rightY.add(p);
+        }
+
+        double dl = closestUtil(pointsSortedX, leftY.toArray(new Point[0]), left, mid);
+        double dr = closestUtil(pointsSortedX, rightY.toArray(new Point[0]), mid + 1, right);
+        double d = Math.min(dl, dr);
+
+        List<Point> strip = new ArrayList<>();
+        for (Point p : pointsSortedY) {
+            if (Math.abs(p.x - midPoint.x) < d) {
+                strip.add(p);
+            }
+        }
+
+        return Math.min(d, stripClosest(strip, d));
+    }
+
+    public static double closestPair(Point[] points) {
+        Point[] pointsSortedX = points.clone();
+        Arrays.sort(pointsSortedX, Comparator.comparingDouble(p -> p.x));
+
+        Point[] pointsSortedY = points.clone();
+        Arrays.sort(pointsSortedY, Comparator.comparingDouble(p -> p.y));
+
+        return closestUtil(pointsSortedX, pointsSortedY, 0, points.length - 1);
+    }
+
+    public static void main(String[] args) {
+        Point[][] testSets = {
+            { new Point(2, 3), new Point(12, 30), new Point(40, 50), new Point(5, 1), new Point(12, 10), new Point(3, 4) },
+            { new Point(0, 0), new Point(1, 1), new Point(2, 2), new Point(5, 5), new Point(3, 4) },
+            { new Point(-1, -1), new Point(-2, -3), new Point(4, 6), new Point(7, 8), new Point(2, 1) },
+            { new Point(100, 100), new Point(105, 105), new Point(110, 115), new Point(200, 200) }
+        };
+
+        for (Point[] test : testSets) {
+            System.out.println("Points: " + Arrays.toString(test));
+            double d = closestPair(test);
+            System.out.println("Closest Pair Distance = " + d);
+            System.out.println();
+        }
+    }
+}
